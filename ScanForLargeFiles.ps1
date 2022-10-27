@@ -39,7 +39,7 @@ Get-ChildItem -Path $targetFolder -Recurse `
     | Where-Object { !$_.PSIsContainer -and $_.Length -gt $minimumFileSize } `
     | Select-Object -Property FullName,@{Name='SizeMB';Expression={[System.Math]::Round($_.Length / 1MB,2)}} `
     | Sort-Object { $_.SizeMB } -Descending `
-    | Export-Csv "$outputFolder\$outputFileName" -NoTypeInformation -Force
+    | Export-Csv $outputFile -NoTypeInformation -Force
 
 Write-Output "--> Done. Opening output file: $($outputFile)"
 
