@@ -27,6 +27,9 @@ param(
     $outputFileName = "LargeFiles_Report.csv"
 )
 
+$settingBefore = Get-ExecutionPolicy -Scope LocalMachine
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope LocalMachine
+
 $ErrorActionPreference = 'SilentlyContinue'
 $outputFile            = "$outputFolder\$outputFileName"
 $targetFolder          = (Get-ChildItem | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
@@ -46,4 +49,5 @@ Write-Output "--> Done. Opening output file: $($outputFile)"
 if (Test-Path $outputFile) { Start-Process $outputFile } `
 else {throw "Output file does not exist."}
 
+Set-ExecutionPolicy -ExecutionPolicy $settingBefore -Scope LocalMachine
 $ErrorActionPreference='Continue'
