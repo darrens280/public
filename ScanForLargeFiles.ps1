@@ -24,15 +24,16 @@ param(
     $minimumFileSize = 5*1024*1024,
 
     [Parameter(Mandatory=$false)][string]
-    $outputFileName = "LargeFiles_Report.csv"
+    $outputFileName = "LargeFiles_Report"
 )
 
 $settingBefore = Get-ExecutionPolicy -Scope LocalMachine
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope LocalMachine
 
 $ErrorActionPreference = 'SilentlyContinue'
-$outputFile            = "$outputFolder\$outputFileName"
-$targetFolder          = (Get-ChildItem | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
+$dateAndTime           = Get-Date -Format yyyyMMdd_HHmmss
+$outputFile            = "$($outputFolder)\$($outputFileName)_$($dateAndTime).csv"
+$targetFolder          = (Get-ChildItem -Path "C:\" | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
 
 if (!(Test-Path $outputFolder)) {New-Item -Path $outputFolder -ItemType Directory | Out-Null}
 
