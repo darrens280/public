@@ -24,11 +24,11 @@ function Install-PowerShell {
     )
 
     $downloadURL        = "https://github.com/PowerShell/PowerShell/releases/download/v$($version)/$($msiFileName)"
-    $LocalTempDir       = $env:TEMP
-    $downloadedFilePath = "$LocalTempDir\$msiFileName"
+    $downloadedFilePath = "$env:TEMP\$msiFileName"
 
     # Download file
-    #(New-Object System.Net.WebClient).DownloadFile($downloadURL, "$LocalTempDir\$msiFileName")
+    #(New-Object System.Net.WebClient).DownloadFile($downloadURL, "$downloadedFilePath")
+    Write-Output "--> Downloading..."
     $ProgressPreference = "SilentlyContinue"
     Invoke-WebRequest -Uri $downloadURL -OutFile $downloadedFilePath -UseBasicParsing
     $ProgressPreference = "Continue"
@@ -42,20 +42,30 @@ function Install-PowerShell {
             Write-Output "Installer returned exit code $msiExitCode"
             throw "Installation aborted"
         }
+        Remove-Item $downloadedFilePath -Force | Out-Null
     }
     else {
-        throw "Downloaded file not found."
+        throw "Downloaded file '$($downloadedFilePath)' not found."
     }
 }
 
 function Install-AzCLI {
+    $downloadURL        = "https://aka.ms/installazurecliwindows"
+    $downloadedFilePath = "$env:TEMP\AzureCLI.msi"
+
     Write-Output "--> Downloading..."
     $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri "https://aka.ms/installazurecliwindows" -OutFile .\AzureCLI.msi
-    Write-Output "--> Installing..."
-    Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'
-    Remove-Item .\AzureCLI.msi -Force | Out-Null
+    Invoke-WebRequest -Uri $downloadURL -OutFile $downloadedFilePath -UseBasicParsing
     $ProgressPreference = 'Continue'
+
+    if (Test-Path -Path $downloadedFilePath) {
+        Write-Output "--> Installing..."
+        Start-Process msiexec.exe -ArgumentList "/I $downloadedFilePath /quiet" -Wait
+        Remove-Item $downloadedFilePath -Force | Out-Null
+    }
+    else {
+        throw "Downloaded file '$($downloadedFilePath)' not found."
+    }
 }
 
 function Install-Chrome {
