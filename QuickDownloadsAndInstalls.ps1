@@ -49,7 +49,13 @@ function Install-PowerShell {
 }
 
 function Install-AzCLI {
-    $ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri "https://aka.ms/installazurecliwindows" -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi;$ProgressPreference = 'Continue'
+    Write-Output "--> Downloading..."
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri "https://aka.ms/installazurecliwindows" -OutFile .\AzureCLI.msi
+    Write-Output "--> Installing..."
+    Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'
+    Remove-Item .\AzureCLI.msi -Force | Out-Null
+    $ProgressPreference = 'Continue'
 }
 
 function Install-Chrome {
