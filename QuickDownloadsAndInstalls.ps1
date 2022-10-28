@@ -6,7 +6,7 @@ function Install-NugetPackageProvider {
     # Open Powershell (as Admin)
     # https://stackoverflow.com/questions/51406685/powershell-how-do-i-install-the-nuget-provider-for-powershell-on-a-unconnected
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Install-PackageProvider -Name NuGet -Verbose
+    Install-PackageProvider -Name NuGet -Verbose -Force
 }
 
 function Install-PowerShell {
@@ -29,11 +29,13 @@ function Install-PowerShell {
 
     # Download file
     #(New-Object System.Net.WebClient).DownloadFile($downloadURL, "$LocalTempDir\$msiFileName")
+    $ProgressPreference = "SilentlyContinue"
     Invoke-WebRequest -Uri $downloadURL -OutFile $downloadedFilePath -UseBasicParsing
+    $ProgressPreference = "Continue"
 
     # Install the downloaded file
     # #msiexec.exe /package $msiFileName /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1
-    if (!(Test-Path -Path $downloadedFilePath)) {
+    if (Test-Path -Path $downloadedFilePath) {
         Write-Output "--> Installing: $($msiFileName)..."
         $msiExitCode = (Start-Process -FilePath $downloadedFilePath -ArgumentList '/quiet' -Wait -PassThru).ExitCode 
         if ($msiExitCode -ne 0) {
