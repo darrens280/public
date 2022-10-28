@@ -21,7 +21,7 @@ param(
     $outputFolder = "C:\TEMP",
 
     [Parameter(Mandatory=$false)][int]
-    $minimumFileSize = 5*1024*1024,
+    $minimumFileSizeInMB = 5,
 
     [Parameter(Mandatory=$false)][string]
     $outputFileName = "LargeFiles_Report"
@@ -32,12 +32,13 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope LocalMachine
 
 $ErrorActionPreference = 'SilentlyContinue'
 $dateAndTime           = Get-Date -Format yyyyMMdd_HHmmss
+$minimumFileSize       = $minimumFileSizeInMB*1024*1024
 $outputFile            = "$($outputFolder)\$($outputFileName)_$($dateAndTime).csv"
 $targetFolder          = (Get-ChildItem -Path "C:\" | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
 
 if (!(Test-Path $outputFolder)) {New-Item -Path $outputFolder -ItemType Directory | Out-Null}
 
-Write-Output "--> Scanning $($targetFolder) for files larger than $($minimumFileSize / 1MB) MB. Please wait..."
+Write-Output "--> Scanning for files larger than $($minimumFileSize / 1MB) MB. Please wait..."
 
 Get-ChildItem -Path $targetFolder -Recurse `
     | Where-Object { !$_.PSIsContainer -and $_.Length -gt $minimumFileSize } `
