@@ -1,3 +1,4 @@
+#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Scans a specific folder for large files, and outputs to CSV
@@ -15,6 +16,8 @@
 
 #>
 
+##########################################################################################################################
+# PARAMETERS
 
 param(
     [Parameter(Mandatory=$false)][string]
@@ -26,6 +29,9 @@ param(
     [Parameter(Mandatory=$false)][string]
     $outputFileName = "LargeFiles_Report"
 )
+
+##########################################################################################################################
+# SCRIPT BODY
 
 $settingBefore = Get-ExecutionPolicy -Scope LocalMachine
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope LocalMachine
