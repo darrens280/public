@@ -1,17 +1,17 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Scans a specific folder for large files, and outputs to CSV
+    Scans a selected folder/s for large files, and outputs to CSV
 .DESCRIPTION
-    User selects a folder from the C:\ which script will then scan files larger than 5MB (default minimum size), and then outputs the results to a CSV file,
-    in the C:\TEMP folder, following which the output file will be opened automatically on completion of the script.
+    User selects a folder (or multiple folders) from the C:\ which script will then scan for files larger than a minimum size (5 MB is default minimum size), 
+    and then outputs the results to a CSV file in the C:\TEMP folder, following which the output file will be opened automatically on completion of the script.
 .EXAMPLE
-    .\ScanForLargeFiles.ps1
+    .\ScanForLargeFiles.ps1 -minimumFileSizeInMB "10" -outputFolder "c:\myTempFolder" -outputFileName "LargeFiles_Report"
 .PARAMETER outputFolder
     This is the folder on the C: where the output CSV file will be stored. Defaults to C:\TEMP if not supplied at runtime.
 .PARAMETER outputFileName
-    This is the name of the output file, that gets stored in the output folder. Defaults to LargeFiles_Report.csv if not supplied at runtime.
-.PARAMETER minimumFileSize
+    This is the name of the output file, that gets stored in the output folder. Defaults to LargeFiles_Report_<YYYYMMDD_HHMMSS>.csv if not supplied at runtime.
+.PARAMETER minimumFileSizeInMB
     This is the minimum file size that will be scanned for when the script is run. Defaults to 5MB if not supplied at runtime.
 
 #>
