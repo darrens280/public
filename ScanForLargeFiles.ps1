@@ -34,17 +34,19 @@ $ErrorActionPreference = 'SilentlyContinue'
 $dateAndTime           = Get-Date -Format yyyyMMdd_HHmmss
 $minimumFileSize       = $minimumFileSizeInMB*1024*1024
 $outputFile            = "$($outputFolder)\$($outputFileName)_$($dateAndTime).csv"
-$targetFolder          = (Get-ChildItem -Path "C:\" | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
+$targetFolders         = (Get-ChildItem -Path "C:\" | Select-Object FullName | Out-GridView -Title "Select folder to scan... and click OK" -PassThru).FullName
 
 if (!(Test-Path $outputFolder)) {New-Item -Path $outputFolder -ItemType Directory | Out-Null}
 
 Write-Output "--> Scanning for files larger than $($minimumFileSize / 1MB) MB. Please wait..."
 
-Get-ChildItem -Path $targetFolder -Recurse `
-    | Where-Object { !$_.PSIsContainer -and $_.Length -gt $minimumFileSize } `
-    | Select-Object -Property FullName,@{Name='SizeMB';Expression={[System.Math]::Round($_.Length / 1MB,2)}} `
-    | Sort-Object { $_.SizeMB } -Descending `
-    | Export-Csv $outputFile -NoTypeInformation -Force
+foreach ($folder in $targetFolders) {
+    Get-ChildItem -Path $folder -Recurse `
+        | Where-Object { !$_.PSIsContainer -and $_.Length -gt $minimumFileSize } `
+        | Select-Object -Property FullName,@{Name='SizeMB';Expression={[System.Math]::Round($_.Length / 1MB,2)}} `
+        | Sort-Object { $_.SizeMB } -Descending `
+        | Export-Csv $outputFile -NoTypeInformation -Force -Append
+}
 
 Write-Output "--> Done. Opening output file: $($outputFile)"
 
