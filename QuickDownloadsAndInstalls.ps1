@@ -126,12 +126,43 @@ Function Get-FilesFromAzure {
       throw "You need to be logged in to Azure before downloading files. Use Connect-AzAccount to login."
     }
 }
-  
+
+function Upload-FileToAzureStorage {
+    param (
+        [Parameter(Mandatory=$true)][string]$storageAccountName,
+        [Parameter(Mandatory=$true)][string]$storageAccountResourceGroup,
+        [Parameter(Mandatory=$true)][string]$storageFileShareName,
+        [Parameter(Mandatory=$true)][string]$fileName,
+        [Parameter(Mandatory=$false)][string]$folder
+
+    )
+    
+    $loggedIn = Get-AzContext
+    if ($loggedIn) {
+        Write-Output "--> Uploading $($fileName) to Azure Storage..."
+        $storageAccessKey = (Get-AzStorageAccountKey -ResourceGroupName $storageAccountResourceGroup -AccountName $storageAccountName)[0].value
+        $storageContext   = New-AzStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageAccessKey
+        
+        if (!$folder) { 
+            Set-AzStorageFileContent -Context $storageContext -ShareName $storageFileShareName -Source $fileName -force 
+        }
+        else { 
+            Set-AzStorageFileContent -Context $storageContext -ShareName $storageFileShareName -Source $fileName -force -Path $folder 
+        }
+    }
+    else {
+        throw "You need to be logged in to Azure before downloading files. Use Connect-AzAccount to login."
+    }
+}
+
 #######################################################################################################################################
+
+# Upload Files
+Connect-AzAccount
+Upload-FileToAzureStorage -storageAccountName $storageAccountName -storageAccountResourceGroup $storageAccountResourceGroup -storageFileShareName $storageFileShareName -fileName "C:\Temp\MicrosoftEdgeEnterpriseX64.msi"
 
 # Download Files
 Connect-AzAccount
-
 $storageAccountName          = "aaa"
 $storageAccountResourceGroup = "bbb"
 $storageFileShareName        = "ccc"
