@@ -139,6 +139,10 @@ function Get-AllAvailableDownloads {
 }
 
 function Get-Download {
+  Set-Parameters
+  Set-TLSSecurity
+  Get-AllAvailableDownloads
+
   if (Test-Path $TargetDownloadFolder) {
     foreach ($artifacts in $selectedObject.Artifacts) {
       # Not showing the progress bar in Invoke-WebRequest is quite a bit faster than default
@@ -147,31 +151,62 @@ function Get-Download {
       Write-Verbose "--> Starting download of: $($artifacts.Location)"
       Write-Output "--> Downloading to: '$($TargetDownloadFolder)'"
       # Work out file name
-      $fileName = Split-Path $artifacts.Location -Leaf
+      $global:fileName = Split-Path $artifacts.Location -Leaf
+      $global:downloadedFilePath = "$TargetDownloadFolder\$fileName"
 
-      if (!(Test-Path "$TargetDownloadFolder\$fileName" -ErrorAction SilentlyContinue)) {
+      if (!(Test-Path $downloadedFilePath -ErrorAction SilentlyContinue)) {
 
         Write-Output "--> Starting download..."
         try {
-          Invoke-WebRequest -Uri $artifacts.Location -OutFile "$TargetDownloadFolder\$fileName" -UseBasicParsing
+          Invoke-WebRequest -Uri $artifacts.Location -OutFile $downloadedFilePath -UseBasicParsing
         }
         catch {
           throw "Attempted to download file, but failed: $error[0]"
         }
       }
-      if (((Get-FileHash -Algorithm $artifacts.HashAlgorithm -Path "$TargetDownloadFolder\$fileName").Hash) -eq $artifacts.Hash) {
+      if (((Get-FileHash -Algorithm $artifacts.HashAlgorithm -Path $downloadedFilePath).Hash) -eq $artifacts.Hash) {
         Write-Verbose "--> Checksum verified"
       }
       else {
         Write-Warning "Checksum mismatch!"
         Write-Warning "Expected Hash: $($artifacts.Hash)"
-        Write-Warning "Downloaded file Hash: $((Get-FileHash -Algorithm $($artifacts.HashAlgorithm) -Path "$TargetDownloadFolder\$fileName").Hash)`n"
+        Write-Warning "Downloaded file Hash: $((Get-FileHash -Algorithm $($artifacts.HashAlgorithm) -Path $downloadedFilePath).Hash)`n"
       }
     }
   }
   else {
     throw "Folder $TargetDownloadFolder does not exist"
   }
+}
+
+function Install-MSEdge {
+
+  Write-Output "--> Installing: $($fileName)..."
+  $msiExitCode    = (Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $downloadedFilePath /qn /l* $TargetDownloadFolder\msedge_msi_install.log" -Wait -PassThru ).ExitCode
+  if ($msiExitCode -ne 0) {
+      Write-Output "ERROR - $filename installer returned exit code $msiExitCode"
+      throw "Installation aborted"
+  }
+  else {
+    Get-Service "edgeupdate" | Set-Service -StartupType Manual -ErrorAction SilentlyContinue | Out-Null
+    Get-Service "edgeupdatem" | Set-Service -StartupType Manual -ErrorAction SilentlyContinue | Out-Null
+    Get-ScheduledTask | Where-Object {$_.TaskName -like "MicrosoftEdgeUpdate*"} | Unregister-ScheduledTask -Confirm:$false -ea 0
+
+    Remove-Item $downloadedFilePath -Force -ea 0 | Out-Null
+    Write-Output "--> Done"
+  }
+}
+
+function Set-DesktopShortcut {
+    # Create Desktop Shortcut for All Users
+    $TargetFile = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+    if (Test-Path $TargetFile) {
+        $ShortcutFile = "$env:Public\Desktop\Microsoft Edge.lnk"
+        $WScriptShell = New-Object -ComObject WScript.Shell
+        $Shortcut = $WScriptShell.CreateShortcut($ShortcutFile)
+        $Shortcut.TargetPath = $TargetFile
+        $Shortcut.Save()
+    }
 }
 
 ############################################################################################################################################
@@ -183,9 +218,15 @@ $edgeEnterpriseMSIUri  = 'https://edgeupdates.microsoft.com/api/products?view=en
 ############################################################################################################################################
 # SCRIPT BODY
 
-Set-Parameters
-Set-TLSSecurity
-Get-AllAvailableDownloads
-Get-Download
+try {
+
+  Get-Download
+  Install-MSEdge
+  Set-DesktopShortcut
+
+}
+catch {
+  throw "Error installing Microsoft Edge"
+}
 
 Write-Output "--> Done"
