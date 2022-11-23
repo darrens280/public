@@ -18,7 +18,7 @@ function Install-PowerShell {
 
     param(
         [Parameter(Mandatory=$false)]
-        [string]$version = "7.2.7",
+        [string]$version = "7.3.0",
 
         [Parameter(Mandatory=$false)]
         [string]$msiFileName = "PowerShell-$($version)-win-x64.msi"
