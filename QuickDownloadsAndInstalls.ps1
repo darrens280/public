@@ -80,4 +80,62 @@ function Install-Chrome {
     If ($ProcessesFound) { "Still running: $($ProcessesFound -join ', ')" | Write-Host; Start-Sleep -Seconds 2 } else { rm "$LocalTempDir\$ChromeInstaller" -ErrorAction SilentlyContinue -Verbose } } Until (!$ProcessesFound)
 
 }
+
+Function Get-FilesFromAzure {
+    param
+    (  
+      [Parameter(Mandatory=$true)][string]$storageAccountName,
+      [Parameter(Mandatory=$true)][string]$storageFileShareName,
+      [Parameter(Mandatory=$true)][string]$storageAccessKey,
+      [Parameter(Mandatory=$false)][string]$fileNameToDownload,
+      [Parameter(Mandatory=$false)][string]$downloadPath = $env:TEMP
+    )
+  
+    $loggedIn = Get-AzContext
+    if ($loggedIn) {
+  
+      Write-Output "--> Downloading files from Azure Storage..."
+      Write-Output "--> Subscription            = '$(($loggedIn).Subscription.Name)'"
+      Write-Output "--> Storage Account Name    = '$($storageAccountName)'"
+      Write-Output "--> Storage File Share Name = '$($storageFileShareName)'"
+  
+      $storageHostName = $storageAccountName + ".file.core.windows.net"
+      
+      Invoke-Expression -Command ("cmdkey /add:$storageHostName /user:AZURE\$storageAccountName /pass:$storageAccessKey")
+  
+      # Mapping Drive
+      $password = ConvertTo-SecureString -String $storageAccessKey -AsPlainText -Force
+      $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "AZURE\$storageAccountName", $password
+      $root = ("\\" + $storageHostName + "\" + $storageFileShareName)
+  
+      Write-Output "--> Full source path       = '$($root)'"
+      New-PSDrive -Name "U" -PSProvider FileSystem -Root $root -Credential $credential | Out-Null
+  
+      if (!(Test-Path $downloadPath)) { New-Item -ItemType Directory -Path $downloadPath | Out-Null }
+  
+      if ($fileNameToDownload) {
+        Write-Output "--> Downloading: '$($fileNameToDownload)' to '$($downloadPath)'..."
+        Copy-Item -Path "U:\$fileNameToDownload" -Destination $downloadPath -Recurse -Force
+      }
+      else {
+        Write-Output "--> Downloading all files from share '$($storageFileShareName)' to: '$($downloadPath)'..."
+        Copy-Item -Path "U:\*" -Destination $downloadPath -Recurse -Force
+      }
+    }
+    else {
+      throw "You need to be logged in to Azure before downloading files. Use Connect-AzAccount to login."
+    }
+}
+  
 #######################################################################################################################################
+
+# Download Files
+Connect-AzAccount
+
+$storageAccountName          = "aaa"
+$storageAccountResourceGroup = "bbb"
+$storageFileShareName        = "ccc"
+$fileName                    = "ddd.exe"
+$storageAccessKey            = (Get-AzStorageAccountKey -ResourceGroupName $storageAccountResourceGroup -AccountName $storageAccountName)[0].value
+
+Get-FilesFromAzure -storageAccountName $storageAccountName -storageFileShareName $storageFileShareName -storageAccessKey $storageAccessKey -fileNameToDownload $fileName
