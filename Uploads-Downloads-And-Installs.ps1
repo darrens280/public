@@ -29,7 +29,7 @@ function Install-PowerShell {
 
     # Download file
     #(New-Object System.Net.WebClient).DownloadFile($downloadURL, "$downloadedFilePath")
-    Write-Output "--> Downloading..."
+    Write-Output "--> Downloading: '$($msiFileName)'..."
     $ProgressPreference = "SilentlyContinue"
     Invoke-WebRequest -Uri $downloadURL -OutFile $downloadedFilePath -UseBasicParsing
     $ProgressPreference = "Continue"
